@@ -273,68 +273,11 @@ app.post('/api/auth/telegram', async (req, res) => {
   }
 });
 
-// Получение текущего пользователя
-app.get('/api/auth/me', async (req, res) => {
-  try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-      return res.status(401).json({ message: 'Токен не предоставлен' });
-    }
-
-    // Простая проверка токена
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-    const user = await User.findByPk(decoded.userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
-    }
-
-    res.json({
-      user: {
-        id: user.id,
-        telegramId: user.telegramId,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        age: user.age,
-        gender: user.gender,
-        lookingFor: user.lookingFor,
-        bio: user.bio,
-        photos: JSON.parse(user.photos),
-        interests: JSON.parse(user.interests),
-        location: JSON.parse(user.location),
-        preferences: JSON.parse(user.preferences),
-        isVerified: user.isVerified,
-        subscription: JSON.parse(user.subscription),
-        settings: JSON.parse(user.settings),
-        lastSeen: user.lastSeen,
-        createdAt: user.createdAt
-      }
-    });
-
-  } catch (error) {
-    console.error('Get user error:', error);
-    res.status(401).json({ message: 'Неверный токен' });
-  }
-});
 
 // Получение потенциальных совпадений
-app.get('/api/users/matches/potential', async (req, res) => {
+app.get('/api/users/matches/potential', authenticateToken, async (req, res) => {
   try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-      return res.status(401).json({ message: 'Токен не предоставлен' });
-    }
-
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-    const currentUser = await User.findByPk(decoded.userId);
-
-    if (!currentUser) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
-    }
+    const currentUser = req.user;
 
     // Простой поиск совпадений
     const users = await User.findAll({
