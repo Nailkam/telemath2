@@ -32,8 +32,11 @@ const LoginPage: React.FC = () => {
     (userData: any) => login(userData),
     {
       onSuccess: () => {
-        const from = location.state?.from?.pathname || '/home';
-        navigate(from, { replace: true });
+        // Небольшая задержка для обновления AuthContext
+        setTimeout(() => {
+          const from = location.state?.from?.pathname || '/home';
+          navigate(from, { replace: true });
+        }, 100);
       },
       onError: (error: any) => {
         toast.error(error.message || 'Ошибка входа');

@@ -422,6 +422,16 @@ app.get('/api/users/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// Endpoint для получения текущего пользователя (используется AuthContext)
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  try {
+    res.json({ user: req.user });
+  } catch (error) {
+    console.error('Get current user error:', error);
+    res.status(500).json({ message: 'Ошибка получения данных пользователя' });
+  }
+});
+
 // Загрузка фото
 const multer = require('multer');
 const storage = multer.diskStorage({
