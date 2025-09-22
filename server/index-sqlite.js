@@ -359,7 +359,20 @@ io.on('connection', (socket) => {
 // Маршруты для пользователей
 app.get('/api/users/profile', authenticateToken, async (req, res) => {
   try {
-    res.json({ user: req.user });
+    const user = req.user;
+    
+    // Парсим JSON поля
+    const userData = {
+      ...user.toJSON(),
+      photos: user.photos ? JSON.parse(user.photos) : [],
+      interests: user.interests ? JSON.parse(user.interests) : [],
+      location: user.location ? JSON.parse(user.location) : {},
+      preferences: user.preferences ? JSON.parse(user.preferences) : {},
+      subscription: user.subscription ? JSON.parse(user.subscription) : {},
+      settings: user.settings ? JSON.parse(user.settings) : {}
+    };
+    
+    res.json({ user: userData });
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({ message: 'Ошибка получения профиля' });
@@ -369,7 +382,20 @@ app.get('/api/users/profile', authenticateToken, async (req, res) => {
 // Endpoint для получения текущего пользователя (используется AuthContext)
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
-    res.json({ user: req.user });
+    const user = req.user;
+    
+    // Парсим JSON поля
+    const userData = {
+      ...user.toJSON(),
+      photos: user.photos ? JSON.parse(user.photos) : [],
+      interests: user.interests ? JSON.parse(user.interests) : [],
+      location: user.location ? JSON.parse(user.location) : {},
+      preferences: user.preferences ? JSON.parse(user.preferences) : {},
+      subscription: user.subscription ? JSON.parse(user.subscription) : {},
+      settings: user.settings ? JSON.parse(user.settings) : {}
+    };
+    
+    res.json({ user: userData });
   } catch (error) {
     console.error('Get current user error:', error);
     res.status(500).json({ message: 'Ошибка получения данных пользователя' });
