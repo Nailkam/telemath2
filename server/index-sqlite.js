@@ -360,6 +360,33 @@ io.on('connection', (socket) => {
   });
 });
 
+// Refresh token endpoint
+app.post('/api/auth/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      return res.status(400).json({ message: 'Refresh token не предоставлен' });
+    }
+    
+    // Простая реализация - создаем новый токен
+    // В реальном приложении здесь была бы проверка refresh token
+    const jwt = require('jsonwebtoken');
+    const newToken = jwt.sign(
+      { userId: 'temp', timestamp: Date.now() },
+      process.env.JWT_SECRET || 'fallback-secret',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+    
+    res.json({
+      token: newToken,
+      refreshToken: refreshToken // Возвращаем тот же refresh token
+    });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    res.status(500).json({ message: 'Ошибка обновления токена' });
+  }
+});
 
 // Маршруты для пользователей
 app.get('/api/users/profile', authenticateToken, async (req, res) => {
@@ -492,6 +519,211 @@ app.post('/api/users/photos', authenticateToken, (req, res, next) => {
   } catch (error) {
     console.error('Upload photo error:', error);
     res.status(500).json({ message: 'Ошибка загрузки фото' });
+  }
+});
+
+// ===== MATCHES API ENDPOINTS =====
+
+// Получение совпадений пользователя
+app.get('/api/matches', authenticateToken, async (req, res) => {
+  try {
+    const currentUser = req.user;
+    
+    // Простая реализация - возвращаем пустой массив для начала
+    // В реальном приложении здесь был бы запрос к таблице совпадений
+    res.json({ 
+      matches: [],
+      message: 'Совпадения пока не реализованы'
+    });
+  } catch (error) {
+    console.error('Get matches error:', error);
+    res.status(500).json({ message: 'Ошибка получения совпадений' });
+  }
+});
+
+// Свайп (лайк/пасс/суперлайк)
+app.post('/api/matches/swipe', authenticateToken, async (req, res) => {
+  try {
+    const { targetUserId, action } = req.body;
+    const currentUser = req.user;
+    
+    if (!targetUserId || !action) {
+      return res.status(400).json({ message: 'Недостаточно данных для свайпа' });
+    }
+    
+    // Простая реализация - всегда возвращаем false для isMatch
+    // В реальном приложении здесь была бы логика проверки взаимного лайка
+    res.json({
+      isMatch: false,
+      action: action,
+      message: 'Свайп зарегистрирован'
+    });
+  } catch (error) {
+    console.error('Swipe error:', error);
+    res.status(500).json({ message: 'Ошибка при свайпе' });
+  }
+});
+
+// Получение конкретного совпадения
+app.get('/api/matches/:matchId', authenticateToken, async (req, res) => {
+  try {
+    const { matchId } = req.params;
+    
+    // Простая реализация
+    res.status(404).json({ message: 'Совпадение не найдено' });
+  } catch (error) {
+    console.error('Get match error:', error);
+    res.status(500).json({ message: 'Ошибка получения совпадения' });
+  }
+});
+
+// Удаление совпадения
+app.delete('/api/matches/:matchId', authenticateToken, async (req, res) => {
+  try {
+    const { matchId } = req.params;
+    
+    // Простая реализация
+    res.json({ message: 'Совпадение удалено' });
+  } catch (error) {
+    console.error('Unmatch error:', error);
+    res.status(500).json({ message: 'Ошибка удаления совпадения' });
+  }
+});
+
+// Получение истории свайпов
+app.get('/api/matches/history/swipes', authenticateToken, async (req, res) => {
+  try {
+    const { limit = 50, skip = 0 } = req.query;
+    
+    // Простая реализация
+    res.json({ 
+      swipes: [],
+      hasMore: false,
+      message: 'История свайпов пока не реализована'
+    });
+  } catch (error) {
+    console.error('Get swipe history error:', error);
+    res.status(500).json({ message: 'Ошибка получения истории свайпов' });
+  }
+});
+
+// Получение полученных лайков
+app.get('/api/matches/likes/received', authenticateToken, async (req, res) => {
+  try {
+    const { limit = 20, skip = 0 } = req.query;
+    
+    // Простая реализация
+    res.json({ 
+      likes: [],
+      hasMore: false,
+      message: 'Полученные лайки пока не реализованы'
+    });
+  } catch (error) {
+    console.error('Get received likes error:', error);
+    res.status(500).json({ message: 'Ошибка получения полученных лайков' });
+  }
+});
+
+// Получение отправленных лайков
+app.get('/api/matches/likes/sent', authenticateToken, async (req, res) => {
+  try {
+    const { limit = 20, skip = 0 } = req.query;
+    
+    // Простая реализация
+    res.json({ 
+      likes: [],
+      hasMore: false,
+      message: 'Отправленные лайки пока не реализованы'
+    });
+  } catch (error) {
+    console.error('Get sent likes error:', error);
+    res.status(500).json({ message: 'Ошибка получения отправленных лайков' });
+  }
+});
+
+// Получение статистики совпадений
+app.get('/api/matches/stats', authenticateToken, async (req, res) => {
+  try {
+    // Простая реализация
+    res.json({ 
+      stats: {
+        totalMatches: 0,
+        totalLikes: 0,
+        totalPasses: 0,
+        totalSuperLikes: 0
+      },
+      message: 'Статистика пока не реализована'
+    });
+  } catch (error) {
+    console.error('Get matches stats error:', error);
+    res.status(500).json({ message: 'Ошибка получения статистики' });
+  }
+});
+
+// ===== MESSAGES API ENDPOINTS =====
+
+// Получение списка бесед
+app.get('/api/messages/conversations', authenticateToken, async (req, res) => {
+  try {
+    // Простая реализация
+    res.json({ 
+      conversations: [],
+      message: 'Беседы пока не реализованы'
+    });
+  } catch (error) {
+    console.error('Get conversations error:', error);
+    res.status(500).json({ message: 'Ошибка получения бесед' });
+  }
+});
+
+// Получение сообщений в беседе
+app.get('/api/messages/conversation/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { limit = 50, skip = 0 } = req.query;
+    
+    // Простая реализация
+    res.json({ 
+      messages: [],
+      hasMore: false,
+      message: 'Сообщения пока не реализованы'
+    });
+  } catch (error) {
+    console.error('Get conversation error:', error);
+    res.status(500).json({ message: 'Ошибка получения сообщений' });
+  }
+});
+
+// Отправка сообщения
+app.post('/api/messages/send', authenticateToken, async (req, res) => {
+  try {
+    const { recipientId, content, type = 'text' } = req.body;
+    
+    if (!recipientId || !content) {
+      return res.status(400).json({ message: 'Недостаточно данных для отправки сообщения' });
+    }
+    
+    // Простая реализация
+    res.json({ 
+      message: 'Сообщение отправлено',
+      messageId: Date.now().toString()
+    });
+  } catch (error) {
+    console.error('Send message error:', error);
+    res.status(500).json({ message: 'Ошибка отправки сообщения' });
+  }
+});
+
+// Отметка сообщений как прочитанных
+app.put('/api/messages/read/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Простая реализация
+    res.json({ message: 'Сообщения отмечены как прочитанные' });
+  } catch (error) {
+    console.error('Mark messages as read error:', error);
+    res.status(500).json({ message: 'Ошибка отметки сообщений' });
   }
 });
 
