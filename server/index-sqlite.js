@@ -443,10 +443,17 @@ app.post('/api/users/photos', authenticateToken, upload.single('photo'), async (
     }
 
     const photoUrl = `/uploads/photos/${req.file.filename}`;
-    const isMain = req.body.isMain === 'true' || !req.user.photos;
+    const isMain = req.body.isMain === 'true' || !req.user.photos || req.user.photos === '[]';
 
     // Обновляем пользователя с новым фото
-    const photos = req.user.photos ? JSON.parse(req.user.photos) : [];
+    let photos = [];
+    try {
+      photos = req.user.photos ? JSON.parse(req.user.photos) : [];
+    } catch (parseError) {
+      console.error('Error parsing photos:', parseError);
+      photos = [];
+    }
+    
     photos.push({ url: photoUrl, isMain, uploadedAt: new Date().toISOString() });
     
     await req.user.update({ photos: JSON.stringify(photos) });
