@@ -421,7 +421,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 // 5MB
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024 // 10MB
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -431,13 +431,31 @@ const upload = multer({
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb(new Error('Разрешены только изображения'));
+      cb(new Error('Разрешены только изображения (JPEG, PNG, GIF, WebP)'));
     }
   }
 });
 
-app.post('/api/users/photos', authenticateToken, upload.single('photo'), async (req, res) => {
+app.post('/api/users/photos', authenticateToken, (req, res, next) => {
+  upload.single('photo')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'Файл слишком большой. Максимальный размер: 10MB' });
+      }
+      if (err.message === 'Разрешены только изображения (JPEG, PNG, GIF, WebP)') {
+        return res.status(400).json({ message: err.message });
+      }
+      return res.status(400).json({ message: 'Ошибка загрузки файла' });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
+    // Проверяем ошибки multer
+    if (req.fileValidationError) {
+      return res.status(400).json({ message: req.fileValidationError });
+    }
+    
     if (!req.file) {
       return res.status(400).json({ message: 'Фото не загружено' });
     }
