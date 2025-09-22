@@ -192,6 +192,36 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Static files
 app.use('/uploads', express.static('uploads'));
 
+// Middleware для аутентификации
+const jwt = require('jsonwebtoken');
+const authenticateToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ message: 'Токен доступа не предоставлен' });
+    }
+
+    // Проверка JWT токена
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+    const user = await User.findOne({ where: { id: decoded.userId } });
+    
+    if (!user) {
+      return res.status(403).json({ message: 'Пользователь не найден' });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Auth error:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(403).json({ message: 'Недействительный токен' });
+    }
+    res.status(500).json({ message: 'Ошибка аутентификации' });
+  }
+};
+
 // Простые маршруты для тестирования
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -325,35 +355,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Middleware для аутентификации
-const jwt = require('jsonwebtoken');
-const authenticateToken = async (req, res, next) => {
-  try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-      return res.status(401).json({ message: 'Токен доступа не предоставлен' });
-    }
-
-    // Проверка JWT токена
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
-    const user = await User.findOne({ where: { id: decoded.userId } });
-    
-    if (!user) {
-      return res.status(403).json({ message: 'Пользователь не найден' });
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error('Auth error:', error);
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(403).json({ message: 'Недействительный токен' });
-    }
-    res.status(500).json({ message: 'Ошибка аутентификации' });
-  }
-};
 
 // Маршруты для пользователей
 app.get('/api/users/profile', authenticateToken, async (req, res) => {
