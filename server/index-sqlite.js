@@ -7,7 +7,16 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
+
+// Создать папку uploads если её нет
+const uploadDir = 'uploads/photos';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log('Created uploads directory');
+}
 
 // Инициализация SQLite базы данных
 const sequelize = new Sequelize({
