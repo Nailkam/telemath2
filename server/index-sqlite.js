@@ -148,6 +148,10 @@ Message.belongsTo(User, { foreignKey: 'senderId' });
 Message.belongsTo(User, { foreignKey: 'receiverId' });
 
 const app = express();
+
+// Настройка trust proxy для Railway
+app.set('trust proxy', 1);
+
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
