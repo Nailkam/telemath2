@@ -377,6 +377,103 @@ io.on('connection', (socket) => {
   });
 });
 
+// Middleware для аутентификации
+const authenticateToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ message: 'Токен доступа не предоставлен' });
+    }
+
+    // Простая проверка токена (в реальном приложении используйте JWT)
+    const user = await User.findOne({ where: { id: token } });
+    if (!user) {
+      return res.status(403).json({ message: 'Недействительный токен' });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Auth error:', error);
+    res.status(500).json({ message: 'Ошибка аутентификации' });
+  }
+};
+
+// Маршруты для пользователей
+app.get('/api/users/profile', authenticateToken, async (req, res) => {
+  try {
+    res.json({ user: req.user });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ message: 'Ошибка получения профиля' });
+  }
+});
+
+// Загрузка фото
+const multer = require('multer');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/photos';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `photo-${req.user.id}-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 // 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Разрешены только изображения'));
+    }
+  }
+});
+
+app.post('/api/users/photos', authenticateToken, upload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Фото не загружено' });
+    }
+
+    const photoUrl = `/uploads/photos/${req.file.filename}`;
+    const isMain = req.body.isMain === 'true' || !req.user.photos;
+
+    // Обновляем пользователя с новым фото
+    const photos = req.user.photos ? JSON.parse(req.user.photos) : [];
+    photos.push({ url: photoUrl, isMain, uploadedAt: new Date().toISOString() });
+    
+    await req.user.update({ photos: JSON.stringify(photos) });
+
+    res.json({ 
+      message: 'Фото загружено успешно',
+      photo: {
+        url: photoUrl,
+        isMain
+      }
+    });
+
+  } catch (error) {
+    console.error('Upload photo error:', error);
+    res.status(500).json({ message: 'Ошибка загрузки фото' });
+  }
+});
+
 // Инициализация базы данных
 async function initializeDatabase() {
   try {
