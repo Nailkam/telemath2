@@ -460,7 +460,7 @@ app.post('/api/users/photos', authenticateToken, (req, res, next) => {
       return res.status(400).json({ message: 'Фото не загружено' });
     }
 
-    const photoUrl = `/uploads/photos/${req.file.filename}`;
+    const photoUrl = `${req.protocol}://${req.get('host')}/uploads/photos/${req.file.filename}`;
     const isMain = req.body.isMain === 'true' || !req.user.photos || req.user.photos === '[]';
 
     // Обновляем пользователя с новым фото
