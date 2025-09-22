@@ -238,8 +238,13 @@ app.post('/api/auth/telegram', async (req, res) => {
       });
     }
 
-    // Простой JWT токен (в реальном приложении используйте библиотеку)
-    const token = Buffer.from(JSON.stringify({ userId: user.id, timestamp: Date.now() })).toString('base64');
+    // Создание JWT токена
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { userId: user.id, timestamp: Date.now() },
+      process.env.JWT_SECRET || 'fallback-secret',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
 
     res.json({
       message: 'Успешная аутентификация',
@@ -378,6 +383,7 @@ io.on('connection', (socket) => {
 });
 
 // Middleware для аутентификации
+const jwt = require('jsonwebtoken');
 const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
@@ -387,16 +393,21 @@ const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ message: 'Токен доступа не предоставлен' });
     }
 
-    // Простая проверка токена (в реальном приложении используйте JWT)
-    const user = await User.findOne({ where: { id: token } });
+    // Проверка JWT токена
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+    const user = await User.findOne({ where: { id: decoded.userId } });
+    
     if (!user) {
-      return res.status(403).json({ message: 'Недействительный токен' });
+      return res.status(403).json({ message: 'Пользователь не найден' });
     }
 
     req.user = user;
     next();
   } catch (error) {
     console.error('Auth error:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(403).json({ message: 'Недействительный токен' });
+    }
     res.status(500).json({ message: 'Ошибка аутентификации' });
   }
 };
