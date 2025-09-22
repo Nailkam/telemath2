@@ -1,0 +1,25 @@
+# Server Configuration
+PORT=3001
+NODE_ENV=development
+
+# Database (SQLite - локальная база данных)
+DATABASE_URL=sqlite:./database.sqlite
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-here
+JWT_EXPIRES_IN=7d
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+TELEGRAM_WEBHOOK_URL=http://localhost:3001/webhook
+
+# File Upload
+UPLOAD_DIR=uploads
+MAX_FILE_SIZE=5242880
+
+# CORS
+ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
